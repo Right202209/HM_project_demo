@@ -1,0 +1,13 @@
+version: '3.7'
+services:
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ACCESS_KEY: 12345678
+      MINIO_SECRET_KEY: 12345678
+    volumes:
+      - /path/to/minio/data:/data
+    command: server /data --console-address ":9001"
