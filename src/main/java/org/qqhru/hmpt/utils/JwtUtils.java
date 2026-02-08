@@ -3,14 +3,30 @@ package org.qqhru.hmpt.utils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import java.util.Date;
 import java.util.Map;
 
+@Component
 public class JwtUtils {
 
-    private static String signKey = "itheima";//签名密钥
-    private static Long expire = 43200000L; //有效时间
+    @Value("${jwt.signKey}")
+    private String signKeyProp;
+
+    @Value("${jwt.expire}")
+    private Long expireProp;
+
+    private static String signKey;
+    private static Long expire;
+
+    @PostConstruct
+    public void init() {
+        signKey = signKeyProp;
+        expire = expireProp;
+    }
 
     /**
      * 生成JWT令牌

@@ -2,6 +2,7 @@ package org.qqhru.hmpt.interceptor;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.qqhru.hmpt.utils.JwtUtils;
 import org.qqhru.hmpt.vo.ResultVo;
 import org.springframework.stereotype.Component;
@@ -18,58 +19,35 @@ import jakarta.servlet.http.HttpServletResponse;
  * 2.配置拦截器
  * 2.1 必须实现 implements WebMvcConfigurer  这个接口
  */
+@Slf4j
 @Component //将此类注册给spring boot
 public class LoginInterceptor implements HandlerInterceptor {
 
-    /**
-     * 放行之前执行的代码
-     * preHandle : 此方法是有返回值的  如果返回true  表示放行  如果返回的是false 表示不放行
-     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        //1.先获得令牌
+        // 1. 获取令牌
         String token = request.getHeader("token");
-//        token = "eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MSwiZXhwIjoxNzM0ODYyMzIyLCJ1c2VybmFtZSI6IlRvbSJ9.-du7HmBGu8Pv6TcKxEZg9ZTmJc41nYLjWfE7J73LUrw";
-        //2.校验令牌 令牌为空
-        if(StrUtil.isEmpty( token )){//没有登录
-            //response.setStatus(401);
-            ResultVo vo = ResultVo.error("NOT_LOGIN1"); //通知浏览器没有登录
 
-
-            //通知浏览器 我们当前放回的数据是json
-            response.setContentType("application/json;charset=utf-8");
-
-            //需要将对象转换成json 并返回
-            String json = JSONUtil.toJsonStr(vo);
-            //String json = JSONObject.toJSONString(vo);
-            //写回给浏览器
-            System.err.println("------->>"+json);
-            response.getWriter().write(json);
-            return false; //请求到此结束 不能放行
+        // 2. 校验令牌
+        if (StrUtil.isEmpty(token)) {
+            log.info("令牌为空，拦截请求");
+            return returnError(response, "NOT_LOGIN");
         }
+
         try {
-            //3.能获得token 并且有值  需要解析token
-            JwtUtils.parseJWT( token );
-            //如果没有任何报错  意味着 token传递是有效的 -> 登录过的
-            //放行 浏览器请求给服务器有令牌的时候 可以放行
+            JwtUtils.parseJWT(token);
             return true;
         } catch (Exception e) {
-            System.out.println(token);
-            //response.setStatus(401);
-            //如果服务器报错了  意味着 token的传递是有问题的 token可能被修改过
-            ResultVo vo = ResultVo.error("NOT_LOGIN2"); //通知浏览器没有登录
-
-            //通知浏览器 我们当前放回的数据是json
-            response.setContentType("application/json;charset=utf-8");
-
-            //需要将对象转换成json 并返回
-            //String json = JSONObject.toJSONString(vo);
-            String json = JSONUtil.toJsonStr(vo);
-            //写回给浏览器
-            System.err.println("========>>"+json);
-            response.getWriter().write(json);
-            return false; //请求到此结束 不能放行
+            log.info("令牌解析失败，拦截请求: {}", token);
+            return returnError(response, "NOT_LOGIN");
         }
+    }
+
+    private boolean returnError(HttpServletResponse response, String msg) throws Exception {
+        ResultVo vo = ResultVo.error(msg);
+        response.setContentType("application/json;charset=utf-8");
+        response.getWriter().write(JSONUtil.toJsonStr(vo));
+        return false;
     }
 
     //放行之后执行的代码
